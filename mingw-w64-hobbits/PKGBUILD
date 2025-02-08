@@ -1,0 +1,61 @@
+_realname=hobbits
+pkgbase=mingw-w64-${_realname}
+pkgname="${MINGW_PACKAGE_PREFIX}-${_realname}"
+pkgver=0.54.1
+pkgrel=1
+pkgdesc="A multi-platform GUI for bit-based analysis, processing, and visualization (mingw-w64)"
+arch=('any')
+mingw_arch=('mingw64' 'ucrt64' 'clang64')
+url="https://github.com/Mahlet-Inc/hobbits"
+license=('spdx:MIT')
+depends=("${MINGW_PACKAGE_PREFIX}-python"
+         "${MINGW_PACKAGE_PREFIX}-qt6-base")
+makedepends=("${MINGW_PACKAGE_PREFIX}-cc"
+             "${MINGW_PACKAGE_PREFIX}-cmake"
+             "${MINGW_PACKAGE_PREFIX}-ninja"
+             "${MINGW_PACKAGE_PREFIX}-qt6-tools"
+             "${MINGW_PACKAGE_PREFIX}-libusb"
+             "${MINGW_PACKAGE_PREFIX}-libpcap")
+source=("$url/archive/refs/tags/v$pkgver.tar.gz"
+        "https://bitbucket.org/jpommier/pffft/get/02fe7715a5bf.zip"
+        "00-externaldeps.patch"
+        "01-cmake.patch")
+sha256sums=('ed3d8aeeb58ca3b4b34bbd446cc2c5f72ba22988ab793557d0fec5f82296407a'
+            '81e1b91bad77092681e5ed6c2eef1a3bae7eb2154d3358a10c663867cd947396'
+            '3de51d0d47854e64711b253269719735777a764e33885de38b2b812a46619462'
+            'd272910c4a4ad76bebe67479edb49ef0f3dd3847219e0c42ae2b66df7e4b0057')
+
+prepare() {
+    rm -rf "${srcdir}/${_realname}-${pkgver}/external/pffft/"
+    mv "${srcdir}/jpommier-pffft-02fe7715a5bf" "${srcdir}/${_realname}-${pkgver}/external/pffft"
+
+    cd "${srcdir}/${_realname}-${pkgver}/"
+    patch -Np1 -i "${srcdir}"/00-externaldeps.patch
+    patch -Np1 -i "${srcdir}"/01-cmake.patch
+}
+
+build() {
+  mkdir -p "${srcdir}/build-${MSYSTEM}" && cd "${srcdir}/build-${MSYSTEM}"
+
+  declare -a extra_config
+  if check_option "debug" "n"; then
+    extra_config+=("-DCMAKE_BUILD_TYPE=Release")
+  else
+    extra_config+=("-DCMAKE_BUILD_TYPE=Debug")
+  fi
+
+  MSYS2_ARG_CONV_EXCL="-DCMAKE_INSTALL_PREFIX=" \
+    "${MINGW_PREFIX}"/bin/cmake.exe \
+      -DCMAKE_INSTALL_PREFIX="${MINGW_PREFIX}" \
+      "${extra_config[@]}" \
+      -GNinja \
+      ../${_realname}-${pkgver}
+
+  "${MINGW_PREFIX}"/bin/cmake.exe --build .
+}
+
+package() {
+  cd "${srcdir}/build-${MSYSTEM}"
+
+  DESTDIR="${pkgdir}" "${MINGW_PREFIX}"/bin/cmake.exe --install .
+}

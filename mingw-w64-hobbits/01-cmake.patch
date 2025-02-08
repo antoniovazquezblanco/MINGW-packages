@@ -1,0 +1,13 @@
+--- hobbits-0.54.1/CMakeLists.txt	2024-04-30 04:00:26.000000000 +0200
++++ hobbits-0.54.1/CMakeLists.txt	2025-02-08 01:31:54.413884300 +0100
+@@ -246,10 +246,7 @@
+ if (NOT BUILDING_WITH_CONAN)
+ 	include(PackExternalDeps)
+ 	if (SELF_CONTAINED_APP OR APPLE OR WIN32)
+-		pack_qt_libs()
+-		pack_python()
+ 		pack_pffft()
+-		pack_pcap()
+ 	endif()
+ 	include(CPack)
+ endif()
